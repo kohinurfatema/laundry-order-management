@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Laundry Order Management</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #333;
+    }
+
+    header {
+      background: #1a73e8;
+      color: white;
+      padding: 16px 32px;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    nav {
+      background: white;
+      display: flex;
+      gap: 4px;
+      padding: 0 32px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    nav button {
+      padding: 14px 24px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 15px;
+      color: #555;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+
+    nav button.active {
+      color: #1a73e8;
+      border-bottom-color: #1a73e8;
+      font-weight: 600;
+    }
+
+    .page { display: none; padding: 32px; max-width: 1000px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* Dashboard */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .card .label { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .card .value { font-size: 28px; font-weight: 700; color: #1a73e8; }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #444;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    th {
+      background: #f5f7fa;
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-top: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+
+    tr:hover td { background: #fafcff; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.RECEIVED  { background: #e3f2fd; color: #1565c0; }
+    .badge.PROCESSING { background: #fff8e1; color: #f57f17; }
+    .badge.READY     { background: #e8f5e9; color: #2e7d32; }
+    .badge.DELIVERED { background: #ede7f6; color: #4527a0; }
+
+    /* Filters */
+    .filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filters input, .filters select {
+      padding: 9px 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .filters input:focus, .filters select:focus { border-color: #1a73e8; }
+
+    /* Form */
+    .form-card {
+      background: white;
+      border-radius: 8px;
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      max-width: 600px;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .form-group input:focus, .form-group select:focus { border-color: #1a73e8; }
+
+    .items-list { margin-bottom: 16px; }
+
+    .item-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .item-row select, .item-row input {
+      padding: 9px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .item-row select { flex: 2; }
+    .item-row input  { flex: 1; }
+
+    .btn {
+      padding: 10px 22px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-primary { background: #1a73e8; color: white; }
+    .btn-primary:hover { background: #1558b0; }
+    .btn-secondary { background: #f0f4f8; color: #333; }
+    .btn-secondary:hover { background: #e0e7ef; }
+    .btn-small { padding: 5px 12px; font-size: 13px; }
+    .btn-danger { background: #fce8e8; color: #c62828; }
+
+    .btn-add-item {
+      background: none;
+      border: 1px dashed #1a73e8;
+      color: #1a73e8;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .alert-success { background: #e8f5e9; color: #2e7d32; }
+    .alert-error   { background: #fce8e8; color: #c62828; }
+
+    /* Status update select in table */
+    .status-select {
+      padding: 5px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .order-result {
+      background: #e8f5e9;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .order-result h3 { color: #2e7d32; margin-bottom: 12px; }
+    .order-result p { margin-bottom: 6px; font-size: 14px; }
+    .order-result strong { color: #1a73e8; font-size: 18px; }
+  </style>
+</head>
+<body>
+
+<header>🧺 Laundry Order Management</header>
+
+<nav>
+  <button class="active" onclick="showPage('dashboard', this)">Dashboard</button>
+  <button onclick="showPage('orders', this)">Orders</button>
+  <button onclick="showPage('new-order', this)">+ New Order</button>
+</nav>
+
+<!-- DASHBOARD PAGE -->
+<div id="dashboard" class="page active">
+  <div class="cards">
+    <div class="card">
+      <div class="label">Total Orders</div>
+      <div class="value" id="d-total">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Total Revenue (PKR)</div>
+      <div class="value" id="d-revenue">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Received</div>
+      <div class="value" id="d-received">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Processing</div>
+      <div class="value" id="d-processing">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Ready</div>
+      <div class="value" id="d-ready">—</div>
+    </div>
+    <div class="card">
+      <div class="label">Delivered</div>
+      <div class="value" id="d-delivered">—</div>
+    </div>
+  </div>
+
+  <div class="section-title">Recent Orders</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Customer</th>
+        <th>Phone</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="d-recent"></tbody>
+  </table>
+</div>
+
+<!-- ORDERS PAGE -->
+<div id="orders" class="page">
+  <div class="filters">
+    <input id="f-name"   type="text"   placeholder="Search by name" oninput="loadOrders()" />
+    <input id="f-phone"  type="text"   placeholder="Search by phone" oninput="loadOrders()" />
+    <select id="f-status" onchange="loadOrders()">
+      <option value="">All Statuses</option>
+      <option>RECEIVED</option>
+      <option>PROCESSING</option>
+      <option>READY</option>
+      <option>DELIVERED</option>
+    </select>
+    <input id="f-garment" type="text" placeholder="Search by garment" oninput="loadOrders()" />
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Customer</th>
+        <th>Phone</th>
+        <th>Items</th>
+        <th>Amount</th>
+        <th>Est. Delivery</th>
+        <th>Status</th>
+        <th>Update</th>
+      </tr>
+    </thead>
+    <tbody id="orders-body"></tbody>
+  </table>
+</div>
+
+<!-- NEW ORDER PAGE -->
+<div id="new-order" class="page">
+  <div class="form-card">
+    <h2 style="margin-bottom:20px;font-size:18px;">Create New Order</h2>
+
+    <div id="form-alert" style="display:none"></div>
+
+    <div class="form-group">
+      <label>Customer Name</label>
+      <input id="o-name" type="text" placeholder="e.g. Ali Khan" />
+    </div>
+
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input id="o-phone" type="text" placeholder="e.g. 03001234567" />
+    </div>
+
+    <div class="form-group">
+      <label>Garments</label>
+      <div class="items-list" id="items-list">
+        <div class="item-row">
+          <select>
+            <option value="">Select garment</option>
+            <option value="shirt">Shirt — PKR 150</option>
+            <option value="pants">Pants — PKR 180</option>
+            <option value="saree">Saree — PKR 350</option>
+            <option value="jacket">Jacket — PKR 300</option>
+            <option value="dress">Dress — PKR 250</option>
+            <option value="suit">Suit — PKR 500</option>
+            <option value="coat">Coat — PKR 400</option>
+            <option value="sweater">Sweater — PKR 200</option>
+            <option value="jeans">Jeans — PKR 180</option>
+            <option value="kurta">Kurta — PKR 120</option>
+          </select>
+          <input type="number" placeholder="Qty" min="1" value="1" />
+        </div>
+      </div>
+      <button class="btn-add-item" onclick="addItemRow()">+ Add Another Garment</button>
+    </div>
+
+    <button class="btn btn-primary" onclick="submitOrder()">Create Order</button>
+  </div>
+
+  <div id="order-result" style="display:none" class="order-result">
+    <h3>Order Created Successfully!</h3>
+    <p>Order ID: <strong id="res-id"></strong></p>
+    <p>Customer: <span id="res-name"></span></p>
+    <p>Total Amount: <strong>PKR <span id="res-total"></span></strong></p>
+    <p>Estimated Delivery: <span id="res-delivery"></span></p>
+    <p>Status: <span class="badge RECEIVED">RECEIVED</span></p>
+  </div>
+</div>
+
+<script>
+  const API = '/api';
+
+  function showPage(id, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+
+    if (id === 'dashboard') loadDashboard();
+    if (id === 'orders') loadOrders();
+  }
+
+  // --- DASHBOARD ---
+  async function loadDashboard() {
+    const data = await fetch(`${API}/dashboard`).then(r => r.json());
+
+    document.getElementById('d-total').textContent     = data.total_orders;
+    document.getElementById('d-revenue').textContent   = data.total_revenue.toLocaleString();
+    document.getElementById('d-received').textContent  = data.orders_by_status.RECEIVED;
+    document.getElementById('d-processing').textContent = data.orders_by_status.PROCESSING;
+    document.getElementById('d-ready').textContent     = data.orders_by_status.READY;
+    document.getElementById('d-delivered').textContent = data.orders_by_status.DELIVERED;
+
+    const tbody = document.getElementById('d-recent');
+    tbody.innerHTML = data.recent_orders.map(o => `
+      <tr>
+        <td><code>${o.id}</code></td>
+        <td>${o.customer_name}</td>
+        <td>${o.phone}</td>
+        <td>PKR ${o.total_amount.toLocaleString()}</td>
+        <td><span class="badge ${o.status}">${o.status}</span></td>
+        <td>${o.created_at.slice(0,10)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px;">No orders yet</td></tr>';
+  }
+
+  // --- ORDERS ---
+  async function loadOrders() {
+    const name    = document.getElementById('f-name').value;
+    const phone   = document.getElementById('f-phone').value;
+    const status  = document.getElementById('f-status').value;
+    const garment = document.getElementById('f-garment').value;
+
+    const params = new URLSearchParams();
+    if (name)    params.set('customer_name', name);
+    if (phone)   params.set('phone', phone);
+    if (status)  params.set('status', status);
+    if (garment) params.set('garment', garment);
+
+    const orders = await fetch(`${API}/orders?${params}`).then(r => r.json());
+
+    const tbody = document.getElementById('orders-body');
+    tbody.innerHTML = orders.map(o => `
+      <tr>
+        <td><code>${o.id}</code></td>
+        <td>${o.customer_name}</td>
+        <td>${o.phone}</td>
+        <td>${o.items.map(i => `${i.garment} x${i.quantity}`).join(', ')}</td>
+        <td>PKR ${o.total_amount.toLocaleString()}</td>
+        <td>${o.estimated_delivery}</td>
+        <td><span class="badge ${o.status}">${o.status}</span></td>
+        <td>
+          <select class="status-select" onchange="updateStatus('${o.id}', this.value)">
+            <option value="">Change...</option>
+            <option value="RECEIVED">RECEIVED</option>
+            <option value="PROCESSING">PROCESSING</option>
+            <option value="READY">READY</option>
+            <option value="DELIVERED">DELIVERED</option>
+          </select>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:24px;">No orders found</td></tr>';
+  }
+
+  async function updateStatus(id, status) {
+    if (!status) return;
+    await fetch(`${API}/orders/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    loadOrders();
+  }
+
+  // --- NEW ORDER ---
+  function addItemRow() {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <select>
+        <option value="">Select garment</option>
+        <option value="shirt">Shirt — PKR 150</option>
+        <option value="pants">Pants — PKR 180</option>
+        <option value="saree">Saree — PKR 350</option>
+        <option value="jacket">Jacket — PKR 300</option>
+        <option value="dress">Dress — PKR 250</option>
+        <option value="suit">Suit — PKR 500</option>
+        <option value="coat">Coat — PKR 400</option>
+        <option value="sweater">Sweater — PKR 200</option>
+        <option value="jeans">Jeans — PKR 180</option>
+        <option value="kurta">Kurta — PKR 120</option>
+      </select>
+      <input type="number" placeholder="Qty" min="1" value="1" />
+      <button class="btn btn-danger btn-small" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.getElementById('items-list').appendChild(row);
+  }
+
+  async function submitOrder() {
+    const name  = document.getElementById('o-name').value.trim();
+    const phone = document.getElementById('o-phone').value.trim();
+    const rows  = document.querySelectorAll('#items-list .item-row');
+
+    const alertEl = document.getElementById('form-alert');
+
+    if (!name || !phone) {
+      showAlert('Name and phone are required.', 'error');
+      return;
+    }
+
+    const items = [];
+    for (const row of rows) {
+      const garment  = row.querySelector('select').value;
+      const quantity = parseInt(row.querySelector('input').value);
+      if (!garment || !quantity) {
+        showAlert('Please fill all garment rows or remove empty ones.', 'error');
+        return;
+      }
+      items.push({ garment, quantity });
+    }
+
+    if (!items.length) {
+      showAlert('Add at least one garment.', 'error');
+      return;
+    }
+
+    const res = await fetch(`${API}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer_name: name, phone, items }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showAlert(data.error, 'error');
+      return;
+    }
+
+    document.getElementById('res-id').textContent       = data.id;
+    document.getElementById('res-name').textContent     = data.customer_name;
+    document.getElementById('res-total').textContent    = data.total_amount.toLocaleString();
+    document.getElementById('res-delivery').textContent = data.estimated_delivery;
+    document.getElementById('order-result').style.display = 'block';
+
+    document.getElementById('o-name').value  = '';
+    document.getElementById('o-phone').value = '';
+    document.getElementById('items-list').innerHTML = `
+      <div class="item-row">
+        <select>
+          <option value="">Select garment</option>
+          <option value="shirt">Shirt — PKR 150</option>
+          <option value="pants">Pants — PKR 180</option>
+          <option value="saree">Saree — PKR 350</option>
+          <option value="jacket">Jacket — PKR 300</option>
+          <option value="dress">Dress — PKR 250</option>
+          <option value="suit">Suit — PKR 500</option>
+          <option value="coat">Coat — PKR 400</option>
+          <option value="sweater">Sweater — PKR 200</option>
+          <option value="jeans">Jeans — PKR 180</option>
+          <option value="kurta">Kurta — PKR 120</option>
+        </select>
+        <input type="number" placeholder="Qty" min="1" value="1" />
+      </div>
+    `;
+    showAlert('', '');
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('form-alert');
+    if (!msg) { el.style.display = 'none'; return; }
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // Load dashboard on start
+  loadDashboard();
+</script>
+</body>
+</html>
